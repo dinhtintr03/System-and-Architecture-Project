@@ -28,8 +28,30 @@ def check_hand_landmarks(image_path):
         return False
 
 # Hàm kiểm tra từng folder và đếm số hình ảnh không nhận diện được
+# def count_failed_images(base_path):
+#     stats = {}
+#     for i in range(14):  # Duyệt qua các folder từ 0 đến 13
+#         folder_name = str(i)
+#         label = labels_mapping[i]
+#         folder_path = os.path.join(base_path, folder_name)
+
+#         if not os.path.isdir(folder_path):
+#             print(f"Thư mục {folder_name} không tồn tại, bỏ qua.")
+#             continue
+        
+#         failed_count = 0
+#         for file in os.listdir(folder_path):
+#             if file.lower().endswith(('.png', '.jpg', '.jpeg')):
+#                 image_path = os.path.join(folder_path, file)
+#                 if not check_hand_landmarks(image_path):
+#                     failed_count += 1
+        
+#         stats[label] = failed_count
+#     return stats
+
 def count_failed_images(base_path):
     stats = {}
+    failed_images = {}
     for i in range(14):  # Duyệt qua các folder từ 0 đến 13
         folder_name = str(i)
         label = labels_mapping[i]
@@ -40,14 +62,25 @@ def count_failed_images(base_path):
             continue
         
         failed_count = 0
+        failed_image_list = []
         for file in os.listdir(folder_path):
             if file.lower().endswith(('.png', '.jpg', '.jpeg')):
                 image_path = os.path.join(folder_path, file)
                 if not check_hand_landmarks(image_path):
                     failed_count += 1
+                    failed_image_list.append(file)
         
         stats[label] = failed_count
-    return stats
+        failed_images[label] = failed_image_list
+    return stats, failed_images
+
+def save_failed_images_to_csv(failed_images, csv_path):
+    with open(csv_path, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Label", "Failed Image"])
+        for label, images in failed_images.items():
+            for image in images:
+                writer.writerow([label, image])
 
 # Hàm vẽ biểu đồ
 def plot_failed_image_statistics(stats):
@@ -80,6 +113,11 @@ if __name__ == "__main__":
     print("Thống kê số lượng hình ảnh không nhận diện được landmark:")
     for label, count in result.items():
         print(f"Label {label}: {count} hình ảnh không nhận diện được")
+
+    # Lưu tên các hình ảnh không nhận diện được vào file CSV
+    csv_path = "failed_images.csv"
+    save_failed_images_to_csv(failed_images, csv_path)
+    print(f"Danh sách các hình ảnh không nhận diện được đã được lưu vào {csv_path}")
     
     # Vẽ biểu đồ
     plot_failed_image_statistics(result)
